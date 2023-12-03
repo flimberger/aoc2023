@@ -1,3 +1,3 @@
-MOD:=	day1
+MOD := trebuchet
 
 .include "../mk/erlang.mk"

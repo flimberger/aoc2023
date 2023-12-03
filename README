@@ -1,0 +1,30 @@
+			Advent of Code 2023
+
+
+
+Requirements:
+
+- Erlang
+- BSD make
+
+
+Setup:
+
+Each day is implemented in a directory containing an Erlang module which
+provides four functions:
+
+- puzzle1/0 - runs the solution for the first task on the input file
+  (usually input.txt)
+- test1/0 - runs the solution on the provided test data for the first
+  task (usually example1.txt)
+- puzzle2/0 - runs the solution for the second task on the input file
+  (usually input.txt)
+- test2/0 - runs the solution on the provided test data for the second
+  task (usually example1.txt)
+
+Each directory contains a single makefile, ideally containing only two
+lines:
+
+	MOD := name
+
+	.include "../mk/erlang.mk"

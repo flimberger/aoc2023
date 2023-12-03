@@ -1,8 +1,15 @@
 -module(day1).
--export([puzzle1/1, puzzle2/1, run/0, test/0]).
+-export([puzzle1/0, test1/0, puzzle2/0, test2/0]).
 
-puzzle1(Path) ->
-  L = read_input(Path),
+puzzle1() ->
+  N = puzzle1("input.txt"),
+  io:format("~w~n", [N]).
+test1() ->
+  142 = puzzle2("example1.txt"),
+  ok.
+
+puzzle1(Filename) ->
+  L = read_input(Filename),
   Ns = process_lines(L, []),
   lists:sum(Ns).
 
@@ -28,6 +35,13 @@ puzzle2(Filename) ->
   Lines = read_input(Filename),
   Ns = process_lines2(Lines, []),
   lists:sum(Ns).
+
+puzzle2() ->
+  N = puzzle2("input.txt"),
+  io:format("~w~n", [N]).
+test2() ->
+  281 = puzzle2("example2.txt"),
+  ok.
 
 process_lines2([], Results) -> lists:reverse(Results);
 process_lines2([H|T], Results) ->
@@ -104,12 +118,3 @@ digit_for_word(Word) ->
     "nine" -> {ok, 9};
     _ -> badarg
   end.
-
-run() ->
-  Res = puzzle2("input.txt"),
-  io:format("~w~n", [Res]),
-  ok.
-
-test() ->
-  281 = puzzle2("example2.txt"),
-  ok.
