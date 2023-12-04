@@ -1,5 +1,5 @@
 -module(cube_conundrum).
--export([puzzle1/0, test1/0]).
+-export([puzzle1/0, test1/0, puzzle2/0, test2/0]).
 
 puzzle1() ->
   N = puzzle1("input.txt", {12, 13, 14}),
@@ -8,11 +8,29 @@ test1() ->
   8 = puzzle1("example1.txt", {12, 13, 14}),
   ok.
 
+puzzle2() ->
+  N = puzzle2("input.txt"),
+  io:format("~w~n", [N]).
+test2() ->
+  2286 = puzzle2("example1.txt"),
+  ok.
+
 puzzle1(Filename, Ncubes) ->
   Lines = read_input(Filename),
   Games = parse_games(Lines, []),
   N = process_games(Games, Ncubes),
   lists:sum(N).
+
+puzzle2(Filename) ->
+  Lines = read_input(Filename),
+  Games = parse_games(Lines, []),
+  MinCubes = find_min_cubes(Games, []),
+  lists:sum([R * G * B || {R, G, B} <- MinCubes]).
+
+find_min_cubes([], Acc) -> Acc;
+find_min_cubes([{_, Rounds}|T], Acc) ->
+  MaxCubes = count_cubes(Rounds, {0, 0, 0}),
+  find_min_cubes(T, [MaxCubes|Acc]).
 
 process_games(Games, Ncubes) -> process_games(Games, Ncubes, []).
 process_games([], _, Acc) -> Acc;
