@@ -1,5 +1,5 @@
 -module(gear_ratios).
--export([puzzle1/0, test1/0]).
+-export([puzzle1/0, test1/0, puzzle2/0, test2/0]).
 
 puzzle1() ->
   N = puzzle1("input.txt"),
@@ -9,17 +9,35 @@ test1() ->
   0 = puzzle1("regress.txt"),
   ok.
 
+puzzle2() ->
+  N = puzzle2("input.txt"),
+  io:format("~w~n", [N]).
+test2() ->
+  467835 = puzzle2("example.txt"),
+  ok.
+
 puzzle1(Filename) ->
-  Lines = read_lines(Filename),
-  {Numbers, Symbols} = read_schematic(Lines),
+  {Numbers, Symbols} = read_schematic(Filename),
   %io:format("numbers: ~w~nsymbols: ~w~n", [Numbers, Symbols]),
   PartNumbers = find_part_numbers(Numbers, Symbols, []),
   %io:format("part numbers: ~w~n", [PartNumbers]),
   lists:sum(PartNumbers).
 
+puzzle2(Filename) ->
+  {Numbers, Symbols} = read_schematic(Filename),
+  GearRatios = find_gear_ratios(Numbers, lists:filter(fun({S, _, _}) ->
+                                                        case S of
+                                                          42 -> true;
+                                                          _ -> false
+                                                        end
+                                                      end, Symbols), []),
+  lists:sum(GearRatios).
+
 % Read the lines into a "map" of the schematic, which is a tuple of a list of
-% numbers and a list of symbols.
-read_schematic(Lines) -> read_schematic(Lines, 0, {[], []}).
+% numbers ({Num, Line, StartCol, EndCol}) and a list of symbols ({Sym, Line, Col}).
+read_schematic(Filename) ->
+  Lines = read_lines(Filename),
+  read_schematic(Lines, 0, {[], []}).
 read_schematic([], _, Acc) -> Acc;
 read_schematic([H|T], CurLine, {NumAcc, SymAcc}) ->
   {Numbers, Symbols} = read_schematic_line(H, CurLine),
@@ -62,13 +80,20 @@ token_type(_) -> symbol.
 % until no numbers are left
 find_part_numbers([], _, Acc) -> Acc;
 find_part_numbers([H={Num, _, _, _}|T], Symbols, Acc) ->
-  case is_part_number(H, Symbols) of
-    true -> find_part_numbers(T, Symbols, [Num|Acc]);
-    false -> find_part_numbers(T, Symbols, Acc)
-  end.
+  NewAcc = case is_part_number(H, Symbols) of
+      true -> [Num|Acc];
+      false -> Acc
+    end,
+  find_part_numbers(T, Symbols, NewAcc).
 
 is_part_number(_, []) -> false;
-is_part_number(N={Num, NLine, NColStart, NColEnd}, [{Sym, SLine, SCol}|T]) ->
+is_part_number(N, [H|T]) ->
+  case is_neighbor(N, H) of
+    true -> true;
+    false -> is_part_number(N, T)
+  end.
+
+is_neighbor({Num, NLine, NColStart, NColEnd}, {Sym, SLine, SCol}) ->
   LineDiff = erlang:abs(SLine - NLine),
   if
     LineDiff =:= 0 andalso (NColStart - SCol =:= 1 orelse SCol - NColEnd =:= 0) ->
@@ -77,8 +102,28 @@ is_part_number(N={Num, NLine, NColStart, NColEnd}, [{Sym, SLine, SCol}|T]) ->
     LineDiff =:= 1 andalso SCol >= NColStart - 1 andalso SCol =< NColEnd ->
       io:format("~w on line ~w adjacent to ~c at {~w, ~w}~n", [Num, NLine, Sym, SLine, SCol]),
       true;
-    true -> is_part_number(N, T)
+    true -> false
   end.
+
+% until no gears are left
+find_gear_ratios(_, [], Acc) -> Acc;
+find_gear_ratios(Numbers, [H|T], Acc) ->
+  N = get_neighbored_numbers(H, Numbers, []),
+  NewAcc = case N of
+      [] -> Acc;
+      [_] -> Acc;
+      [{A, _, _, _}, {B, _, _, _}] -> [A*B|Acc]
+      % everything else should crash
+    end,
+  find_gear_ratios(Numbers, T, NewAcc).
+
+get_neighbored_numbers(_, [], Acc) -> Acc;
+get_neighbored_numbers(Gear, [H|T], Acc) ->
+  NewAcc = case is_neighbor(H, Gear) of
+      true -> [H|Acc];
+      false -> Acc
+    end,
+  get_neighbored_numbers(Gear, T, NewAcc).
 
 read_lines(Filename) ->
   {ok, Bin} = file:read_file(Filename),
